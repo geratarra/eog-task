@@ -1,5 +1,15 @@
+import { Box, Container } from '@material-ui/core';
 import React from 'react';
+import MultipleSelect from './MultipleSelect';
 
 export default () => {
-  return <div>Dashboard</div>;
+  const metrics = ['flareTemp', 'injValveOpen', 'oilTemp', 'casingPressure', 'tubingPressure', 'waterTemp'];
+  return (
+    <Container maxWidth="lg">
+      {/* <Box></Box> */}
+      <Box>
+        <MultipleSelect values={metrics} />
+      </Box>
+    </Container>
+  );
 };
