@@ -45,6 +45,7 @@ module.exports = {
     'no-use-before-define': 'off',
     'no-param-reassign': 0,
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    'react/jsx-indent': ['error', 2, { checkAttributes: true, indentLogicalExpressions: true }],
   },
   settings: {
     'import/resolver': {

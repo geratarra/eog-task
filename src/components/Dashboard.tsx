@@ -1,64 +1,134 @@
-import { Box, Card, CardContent, Container, Grid, Typography } from '@material-ui/core';
-import React from 'react';
-import MultipleSelect from './MultipleSelect';
+import { Box, Container } from '@material-ui/core';
+import React, { useEffect, useState } from 'react';
+import { SubscriptionClient } from 'subscriptions-transport-ws';
+import { useSelector } from 'react-redux';
+import { createClient, defaultExchanges, Provider, subscriptionExchange, useQuery } from 'urql';
+import Metrics from '../Features/Metrics/Metrics';
+import { IState } from '../store';
+import MeasurementsChart from './MeasurementsChart';
 
-interface Metric {
-  metric: string;
-  value: number;
-  unit: string;
+const subscriptionClient = new SubscriptionClient('ws://react.eogresources.com/graphql', {
+  reconnect: true,
+});
+
+const client = createClient({
+  url: 'https://react.eogresources.com/graphql',
+  exchanges: [
+    ...defaultExchanges,
+    subscriptionExchange({
+      forwardSubscription: (operation) => subscriptionClient.request(operation),
+    }),
+  ],
+});
+
+// const newMeasurementSub = `
+//   subscription NewMeasurementSub {
+//     newMeasurement {
+//       metric
+//       value
+//       unit
+//       at
+//     }
+//   }
+// `;
+
+const getSelectedMetrics = (state: IState) => {
+  const { selectedMetrics } = state.metrics;
+  return {
+    selectedMetrics,
+  };
+};
+
+const getMultipleMeasurementsQuery = `
+  query ($input: [MeasurementQuery]) {
+    getMultipleMeasurements(input: $input) {
+      metric
+      measurements {
+        metric
+        unit
+        value
+        at
+      }
+    }
+  }
+`;
+
+const useGetMultipleMeasurements = (input: { metricName: String }[]) => {
+  const [getMultipleMeasurementsQueryResult] = useQuery({
+    query: getMultipleMeasurementsQuery,
+    variables: {
+      input,
+    },
+  });
+  return getMultipleMeasurementsQueryResult;
+};
+
+export interface MeasurementsChartItem {
+  date: string;
+  id: number;
+  [key: string]: number | string;
 }
 
-export default () => {
-  const metrics = ['flareTemp', 'injValveOpen', 'oilTemp', 'casingPressure', 'tubingPressure', 'waterTemp'];
+const Dashboard = () => {
+  //   const [newMeasurementsSubResult] = useSubscription({ query: newMeasurementSub });
+  const [chartData, setChartData] = useState<MeasurementsChartItem[]>([]);
+  const { selectedMetrics } = useSelector(getSelectedMetrics);
+  const multipleMeasurementsInput = selectedMetrics.map((metric) => {
+    return { metricName: metric };
+  });
+  const { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
 
-  const selectedValuesHandler = (values: string[]) => {
-    console.log('values from dashboard', values);
-  };
+  useEffect(() => {
+    const chartDataItems: MeasurementsChartItem[] = [];
+    const multipleMeasurementsData = multipleMeasurementsResult
+      ? multipleMeasurementsResult.getMultipleMeasurements
+      : [];
 
-  const selectedMetris: Metric[] = [
-    {
-      metric: 'oilTemp',
-      value: 96.08,
-      unit: 'F',
-    },
-    {
-      metric: 'anotherTemp',
-      value: 96.08,
-      unit: 'F',
-    },
-    {
-      metric: 'waterTemp',
-      value: 96.08,
-      unit: 'F',
-    },
-  ];
+    if (multipleMeasurementsData.length !== 0) {
+      let date;
+      for (let i = 0; i < multipleMeasurementsData.length; i += 1) {
+        for (let k = 0; k < 4000; k += 1) {
+          chartDataItems[k] = chartDataItems[k] || {};
+          chartDataItems[k].id = k;
+          chartDataItems[k][multipleMeasurementsData[i].metric] = multipleMeasurementsData[i].measurements[k].value;
+          date = new Date(multipleMeasurementsData[i].measurements[k].at);
+          chartDataItems[k].date = `${date.getHours()}:${date.getMinutes()}`;
+        }
+      }
+      setChartData(chartDataItems);
+    }
+  }, [multipleMeasurementsResult]);
+
   return (
     <Container maxWidth="lg">
-      <Grid direction="row" spacing={2} container>
-        <Grid md={8} item>
-          <Grid container spacing={2}>
-            {selectedMetris.map((metric) => {
-              return (
-                <Grid key={metric.metric} xs={6} item>
-                  <Card>
-                    <CardContent>
-                      <CardContent>
-                        <Typography>{metric.metric}</Typography>
-                        <Typography>{metric.value}</Typography>
-                      </CardContent>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Grid>
-        <Grid xs={12} sm={12} md={4} item>
-          <Box display="flex" flexDirection="row" justifyContent="flex-end">
-            <MultipleSelect values={metrics} changeCallback={selectedValuesHandler} />
-          </Box>
-        </Grid>
-      </Grid>
+      <Box>
+        <Metrics />
+      </Box>
+      {/* <Grid container spacing={2}>
+        {selectedMetrics.map((metric) => {
+          return (
+            <Grid key={metric.metric} xs={6} sm={3} md={2} item>
+              <Card>
+                <CardContent>
+                  <CardContent>
+                    <Typography>{metric.metric}</Typography>
+                    <Typography>{metric.value}</Typography>
+                  </CardContent>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid> */}
+      <Box pb={10}>{selectedMetrics.length !== 0 && <MeasurementsChart data={chartData} />}</Box>
     </Container>
+  );
+};
+
+export default () => {
+  return (
+    <Provider value={client}>
+      <Dashboard />
+    </Provider>
   );
 };

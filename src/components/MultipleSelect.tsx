@@ -9,7 +9,9 @@ type MultipleSelectProps = {
 const useStyles = makeStyles({
   formControl: {
     minWidth: 180,
-    backgroundColor: 'white',
+  },
+  inputLabel: {
+    color: 'black',
   },
   chips: {
     display: 'flex',
@@ -17,6 +19,7 @@ const useStyles = makeStyles({
   },
   chip: {
     margin: 2,
+    backgroundColor: 'white',
   },
 });
 
@@ -31,7 +34,9 @@ const MultipleSelect = ({ values = ['No metrics'], changeCallback }: MultipleSel
 
   return (
     <FormControl className={classes.formControl}>
-      <InputLabel id="mutiple-metric-label">Select metric...</InputLabel>
+      <InputLabel className={classes.inputLabel} id="mutiple-metric-label">
+        Select metric...
+      </InputLabel>
       <Select
         labelId="mutiple-metric-label"
         id="mutiple-metric"
