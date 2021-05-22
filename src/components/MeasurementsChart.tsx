@@ -1,24 +1,14 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { IState } from '../store';
 
 import { MeasurementsChartItem } from './Dashboard';
 
 type MeasurementsChartProps = {
   data: MeasurementsChartItem[];
+  metricUnits: any[];
 };
 
-const getSelectedMetrics = (state: IState) => {
-  const { selectedMetrics } = state.metrics;
-  return {
-    selectedMetrics,
-  };
-};
-
-export default ({ data }: MeasurementsChartProps) => {
-  const { selectedMetrics } = useSelector(getSelectedMetrics);
-
+export default ({ data, metricUnits }: MeasurementsChartProps) => {
   return (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart
@@ -32,10 +22,24 @@ export default ({ data }: MeasurementsChartProps) => {
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis interval="preserveEnd" dataKey="date" angle={-25} dy={15} tickSize={4} tick={{ fontSize: 12 }} />
-        <YAxis dx={-10} />
         <Tooltip />
-        {selectedMetrics.map((metric) => (
-          <Line dot={false} type="monotone" dataKey={metric} key={metric} />
+        {metricUnits.map((item, index) => (
+          <Line
+            stroke={item.color}
+            dot={false}
+            yAxisId={index}
+            type="monotone"
+            dataKey={item.metric}
+            key={`${item.metric}XAxis`}
+          />
+        ))}
+        {metricUnits.map((item, index) => (
+          <YAxis
+            label={{ value: item.metric, angle: -90, position: 'insideTopLeft' }}
+            yAxisId={index}
+            dx={-5}
+            key={`${item.metric}YAxis`}
+          />
         ))}
       </LineChart>
     </ResponsiveContainer>

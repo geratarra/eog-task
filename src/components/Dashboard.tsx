@@ -69,14 +69,18 @@ export interface MeasurementsChartItem {
   [key: string]: number | string;
 }
 
+const randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+
 const Dashboard = () => {
   //   const [newMeasurementsSubResult] = useSubscription({ query: newMeasurementSub });
   const [chartData, setChartData] = useState<MeasurementsChartItem[]>([]);
+  const [metricUnits, setMetricUnits] = useState<any[]>([]);
   const { selectedMetrics } = useSelector(getSelectedMetrics);
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric };
   });
   const { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
+  //   let metricUnits: any[] = [];
 
   useEffect(() => {
     const chartDataItems: MeasurementsChartItem[] = [];
@@ -86,8 +90,17 @@ const Dashboard = () => {
 
     if (multipleMeasurementsData.length !== 0) {
       let date;
+
+      const auxMetricUnits = [];
+      setMetricUnits([]);
+
       for (let i = 0; i < multipleMeasurementsData.length; i += 1) {
-        for (let k = 0; k < 4000; k += 1) {
+        auxMetricUnits.push({
+          metric: multipleMeasurementsData[i].metric,
+          unit: multipleMeasurementsData[i].measurements[0].unit,
+          color: randomColor(),
+        });
+        for (let k = 0; k < 5; k += 1) {
           chartDataItems[k] = chartDataItems[k] || {};
           chartDataItems[k].id = k;
           chartDataItems[k][multipleMeasurementsData[i].metric] = multipleMeasurementsData[i].measurements[k].value;
@@ -95,6 +108,8 @@ const Dashboard = () => {
           chartDataItems[k].date = `${date.getHours()}:${date.getMinutes()}`;
         }
       }
+
+      setMetricUnits(auxMetricUnits);
       setChartData(chartDataItems);
     }
   }, [multipleMeasurementsResult]);
@@ -120,7 +135,9 @@ const Dashboard = () => {
           );
         })}
       </Grid> */}
-      <Box pb={10}>{selectedMetrics.length !== 0 && <MeasurementsChart data={chartData} />}</Box>
+      <Box pb={10}>
+        {selectedMetrics.length !== 0 && <MeasurementsChart metricUnits={metricUnits} data={chartData} />}
+      </Box>
     </Container>
   );
 };
