@@ -91,7 +91,7 @@ const Dashboard = () => {
     if (multipleMeasurementsData.length !== 0) {
       let date;
 
-      const auxMetricUnits = [];
+      const auxMetricUnits: any[] = [];
       setMetricUnits([]);
 
       for (let i = 0; i < multipleMeasurementsData.length; i += 1) {
@@ -100,11 +100,11 @@ const Dashboard = () => {
           unit: multipleMeasurementsData[i].measurements[0].unit,
           color: randomColor(),
         });
-        for (let k = 0; k < 5; k += 1) {
+        for (let k = 0; k < 1000; k += 1) {
           chartDataItems[k] = chartDataItems[k] || {};
           chartDataItems[k].id = k;
-          chartDataItems[k][multipleMeasurementsData[i].metric] = multipleMeasurementsData[i].measurements[k].value;
-          date = new Date(multipleMeasurementsData[i].measurements[k].at);
+          chartDataItems[k][multipleMeasurementsData[i].metric] = multipleMeasurementsData[i]?.measurements[k]?.value;
+          date = new Date(multipleMeasurementsData[i]?.measurements[k]?.at);
           chartDataItems[k].date = `${date.getHours()}:${date.getMinutes()}`;
         }
       }
