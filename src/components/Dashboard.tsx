@@ -1,8 +1,8 @@
-import { Box, Container } from '@material-ui/core';
+import { Box, Card, CardContent, Container, Grid, makeStyles, Typography } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 import { useSelector } from 'react-redux';
-import { createClient, defaultExchanges, Provider, subscriptionExchange, useQuery } from 'urql';
+import { createClient, defaultExchanges, Provider, subscriptionExchange, useQuery, useSubscription } from 'urql';
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
@@ -21,16 +21,16 @@ const client = createClient({
   ],
 });
 
-// const newMeasurementSub = `
-//   subscription NewMeasurementSub {
-//     newMeasurement {
-//       metric
-//       value
-//       unit
-//       at
-//     }
-//   }
-// `;
+const newMeasurementSub = `
+  subscription NewMeasurementSub {
+    newMeasurement {
+      metric
+      value
+      unit
+      at
+    }
+  }
+`;
 
 const getSelectedMetrics = (state: IState) => {
   const { selectedMetrics } = state.metrics;
@@ -64,77 +64,123 @@ const useGetMultipleMeasurements = (input: { metricName: String }[]) => {
 };
 
 export interface MeasurementsChartItem {
-  date: string;
   id: number;
+  at: string;
   [key: string]: number | string;
 }
 
-const randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+const getColor = (index: number) => ['green', 'blue', 'red', 'black', 'pink', 'purple', 'orange'][index];
+
+const useStyles = makeStyles({
+  cardsConteiner: {
+    paddingBottom: '2%',
+  },
+});
+
+const filterNewMeasurement = (data: any, newMeasurement: MeasurementsChartItem, filters: string[]) => {
+  const metricsToAdd: MeasurementsChartItem = {
+    id: newMeasurement.id,
+    at: newMeasurement.at,
+  };
+  filters.forEach((metric) => {
+    metricsToAdd[metric] = newMeasurement[metric];
+  });
+  return [...data, metricsToAdd];
+};
+
+const createChartDataItems = (multipleMeasurementsResult: any[], limit: number) => {
+  const chartDataItems: MeasurementsChartItem[] = [];
+
+  if (multipleMeasurementsResult?.length !== 0) {
+    let date;
+
+    for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
+      for (let k = 0; k < limit; k += 1) {
+        chartDataItems[k] = chartDataItems[k] || {};
+        chartDataItems[k][multipleMeasurementsResult[i].metric] = multipleMeasurementsResult[i]?.measurements[k]?.value;
+        date = new Date(multipleMeasurementsResult[i]?.measurements[k]?.at);
+        chartDataItems[k].at = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+        chartDataItems[k].milliseconds = multipleMeasurementsResult[i]?.measurements[k]?.at;
+      }
+    }
+  }
+
+  return chartDataItems;
+};
+
+const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
+  const auxMetricUnits: any[] = [];
+
+  if (multipleMeasurementsResult?.length !== 0) {
+    for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
+      auxMetricUnits.push({
+        metric: multipleMeasurementsResult[i].metric,
+        unit: multipleMeasurementsResult[i].measurements[0].unit,
+        color: getColor(i),
+      });
+    }
+  }
+
+  return auxMetricUnits;
+};
+
+let batch: MeasurementsChartItem = {
+  id: new Date().getTime(),
+  at: '',
+};
 
 const Dashboard = () => {
-  //   const [newMeasurementsSubResult] = useSubscription({ query: newMeasurementSub });
+  const classes = useStyles();
+  const [newMeasurementsSubResult] = useSubscription({ query: newMeasurementSub });
   const [chartData, setChartData] = useState<MeasurementsChartItem[]>([]);
   const [metricUnits, setMetricUnits] = useState<any[]>([]);
   const { selectedMetrics } = useSelector(getSelectedMetrics);
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric };
   });
-  const { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
-  //   let metricUnits: any[] = [];
+  let { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
 
   useEffect(() => {
-    const chartDataItems: MeasurementsChartItem[] = [];
-    const multipleMeasurementsData = multipleMeasurementsResult
-      ? multipleMeasurementsResult.getMultipleMeasurements
-      : [];
-
-    if (multipleMeasurementsData.length !== 0) {
-      let date;
-
-      const auxMetricUnits: any[] = [];
-      setMetricUnits([]);
-
-      for (let i = 0; i < multipleMeasurementsData.length; i += 1) {
-        auxMetricUnits.push({
-          metric: multipleMeasurementsData[i].metric,
-          unit: multipleMeasurementsData[i].measurements[0].unit,
-          color: randomColor(),
-        });
-        for (let k = 0; k < 1000; k += 1) {
-          chartDataItems[k] = chartDataItems[k] || {};
-          chartDataItems[k].id = k;
-          chartDataItems[k][multipleMeasurementsData[i].metric] = multipleMeasurementsData[i]?.measurements[k]?.value;
-          date = new Date(multipleMeasurementsData[i]?.measurements[k]?.at);
-          chartDataItems[k].date = `${date.getHours()}:${date.getMinutes()}`;
-        }
-      }
-
-      setMetricUnits(auxMetricUnits);
-      setChartData(chartDataItems);
-    }
+    multipleMeasurementsResult = multipleMeasurementsResult?.getMultipleMeasurements;
+    setMetricUnits(createMetricUnitsArray(multipleMeasurementsResult));
+    setChartData(createChartDataItems(multipleMeasurementsResult, 200));
   }, [multipleMeasurementsResult]);
+
+  useEffect(() => {
+    if (newMeasurementsSubResult?.data) {
+      const newMetric = newMeasurementsSubResult.data.newMeasurement;
+      const date = new Date(newMetric?.at);
+      if (!batch[newMetric.metric]) {
+        batch[newMetric.metric] = newMetric.value;
+        batch.milliseconds = newMetric.at;
+        batch.at = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+      } else {
+        const newChartData = filterNewMeasurement(chartData, batch, selectedMetrics);
+        if (newChartData.length !== chartData.length) setChartData(newChartData.slice());
+        batch = { id: new Date().getTime(), at: '' };
+      }
+    }
+  }, [newMeasurementsSubResult]);
 
   return (
     <Container maxWidth="lg">
       <Box>
         <Metrics />
       </Box>
-      {/* <Grid container spacing={2}>
+      <Grid container spacing={2} className={classes.cardsConteiner}>
         {selectedMetrics.map((metric) => {
           return (
-            <Grid key={metric.metric} xs={6} sm={3} md={2} item>
+            <Grid key={`grid_${metric}`} xs={6} sm={3} md={2} item>
               <Card>
                 <CardContent>
-                  <CardContent>
-                    <Typography>{metric.metric}</Typography>
-                    <Typography>{metric.value}</Typography>
-                  </CardContent>
+                  <Typography variant="h6">{metric}</Typography>
+                  <Typography variant="h3">205.4</Typography>
                 </CardContent>
               </Card>
             </Grid>
           );
         })}
-      </Grid> */}
+      </Grid>
       <Box pb={10}>
         {selectedMetrics.length !== 0 && <MeasurementsChart metricUnits={metricUnits} data={chartData} />}
       </Box>

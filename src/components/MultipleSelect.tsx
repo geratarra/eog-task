@@ -47,13 +47,13 @@ const MultipleSelect = ({ values = ['No metrics'], changeCallback }: MultipleSel
         renderValue={(selected) => (
           <div className={classes.chips}>
             {(selected as string[]).map((value) => (
-              <Chip key={value} label={value} className={classes.chip} />
+              <Chip key={`multipleSelect_${value}`} label={value} className={classes.chip} />
             ))}
           </div>
         )}
       >
         {values.map((value: string) => (
-          <MenuItem key={value} value={value}>
+          <MenuItem key={`menuItem_${value}`} value={value}>
             {value}
           </MenuItem>
         ))}

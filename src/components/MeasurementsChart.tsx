@@ -8,9 +8,43 @@ type MeasurementsChartProps = {
   metricUnits: any[];
 };
 
+interface CustomTooltipInterface {
+  active?: boolean;
+  payload?: any[];
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipInterface) => {
+  if (active && payload && payload.length) {
+    const date = new Date(payload[0].payload.milliseconds).toUTCString();
+    const metricPelements: JSX.Element[] = [];
+    payload.forEach((point) => {
+      const metricLabel = `${point.name}: ${point.value}`;
+      metricPelements.push(
+        <p style={{ margin: '0px 0px' }} key={point.name}>
+          {metricLabel}
+        </p>,
+      );
+    });
+    return (
+      <div style={{ backgroundColor: 'white', padding: '1% 5% 8%', borderRadius: '5px' }}>
+        <p>{`${date}`}</p>
+        {metricPelements.map((metric) => metric)}
+      </div>
+    );
+  }
+
+  return null;
+};
+
+CustomTooltip.defaultProps = {
+  active: false,
+  payload: [],
+};
+
 export default ({ data, metricUnits }: MeasurementsChartProps) => {
   metricUnits.forEach((unit) => {
-    const metricByUnit = data.map((metric) => {
+    unit.render = false;
+    const metricByUnit = data?.map((metric) => {
       return metric[unit.metric];
     });
     unit.min = metricByUnit.reduce((acc, curr) => (acc < curr ? acc : curr));
@@ -46,30 +80,30 @@ export default ({ data, metricUnits }: MeasurementsChartProps) => {
         data={data}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis interval={120} dataKey="date" angle={-25} dy={15} tickSize={4} tick={{ fontSize: 12 }} />
+        <XAxis interval="preserveStart" dataKey="at" dy={5} tickSize={4} tick={{ fontSize: 12 }} />
+        <Tooltip content={<CustomTooltip />} />
         <Tooltip />
-        {metricUnits.map((item, index) => (
+        {metricUnits?.map((item, index) => (
           <Line
             stroke={item.color}
             dot={false}
             yAxisId={index}
+            isAnimationActive={false}
             type="monotone"
             dataKey={item.metric}
             key={`${item.metric}XAxis`}
           />
         ))}
-        {metricUnits.map((item, index) => {
-          return (
-            <YAxis
-              hide={!item.render}
-              tickCount={10}
-              label={{ value: item.unit, angle: -90, position: 'insideTopLeft' }}
-              yAxisId={index}
-              dx={-5}
-              key={`${item.metric}YAxis`}
-            />
-          );
-        })}
+        {metricUnits?.map((item, index) => (
+          <YAxis
+            hide={!item.render}
+            tickCount={10}
+            label={{ value: item.unit, angle: -90, position: 'insideTopLeft' }}
+            yAxisId={index}
+            dx={-5}
+            key={`${item.metric}YAxis`}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );
