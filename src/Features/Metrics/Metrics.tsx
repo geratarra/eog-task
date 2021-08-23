@@ -35,7 +35,15 @@ const Metrics = () => {
   const { metrics } = useSelector(getMetrics);
 
   const selectedValuesHandler = (values: string[]) => {
-    dispatch(actions.selectedMetrics(values));
+    dispatch(
+      actions.selectedMetrics(
+        values.map((value) => {
+          return {
+            metric: value,
+          };
+        }),
+      ),
+    );
   };
 
   const [result] = useQuery({

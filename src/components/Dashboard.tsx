@@ -6,6 +6,8 @@ import { createClient, defaultExchanges, Provider, subscriptionExchange, useQuer
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
+import { MeasurementsChartItem, SelectedMetric } from '../Features/Metrics/Interfaces';
+import { filterNewMeasurement, setDifference } from '../utils/utils';
 
 const subscriptionClient = new SubscriptionClient('ws://react.eogresources.com/graphql', {
   reconnect: true,
@@ -63,30 +65,17 @@ const useGetMultipleMeasurements = (input: { metricName: String }[]) => {
   return getMultipleMeasurementsQueryResult;
 };
 
-export interface MeasurementsChartItem {
-  id: number;
-  at: string;
-  [key: string]: number | string;
-}
-
 const getColor = (index: number) => ['green', 'blue', 'red', 'black', 'pink', 'purple', 'orange'][index];
 
 const useStyles = makeStyles({
   cardsConteiner: {
-    paddingBottom: '2%',
+    paddingBottom: '1%',
+  },
+  cardContent: {
+    padding: '5%',
+    paddingRight: '10%',
   },
 });
-
-const filterNewMeasurement = (data: any, newMeasurement: MeasurementsChartItem, filters: string[]) => {
-  const metricsToAdd: MeasurementsChartItem = {
-    id: newMeasurement.id,
-    at: newMeasurement.at,
-  };
-  filters.forEach((metric) => {
-    metricsToAdd[metric] = newMeasurement[metric];
-  });
-  return [...data, metricsToAdd];
-};
 
 const createChartDataItems = (multipleMeasurementsResult: any[], limit: number) => {
   const chartDataItems: MeasurementsChartItem[] = [];
@@ -136,9 +125,26 @@ const Dashboard = () => {
   const [metricUnits, setMetricUnits] = useState<any[]>([]);
   const { selectedMetrics } = useSelector(getSelectedMetrics);
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
-    return { metricName: metric };
+    return { metricName: metric.metric };
   });
+  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<SelectedMetric[]>([
+    ...selectedMetrics,
+  ]);
   let { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
+
+  useEffect(() => {
+    if (selectedMetrics.length < selectedMetricsWithLastMeasure.length) {
+      const selectedMetricsStrings = selectedMetrics.map((metric) => metric.metric);
+      const selectedMetricsWithLastMeasureStrings = selectedMetricsWithLastMeasure.map((metric) => metric.metric);
+      const selectedMetricsSet = new Set(selectedMetricsStrings);
+      const selectedMetricsWithLastMeasureSet = new Set(selectedMetricsWithLastMeasureStrings);
+      const removedElementAsSet = setDifference(selectedMetricsWithLastMeasureSet, selectedMetricsSet);
+      const removedMetric = [...removedElementAsSet][0];
+      setSelectedMetricsWithLastMeasure(
+        selectedMetricsWithLastMeasure.filter((metric) => metric.metric !== removedMetric),
+      );
+    }
+  }, [selectedMetrics]);
 
   useEffect(() => {
     multipleMeasurementsResult = multipleMeasurementsResult?.getMultipleMeasurements;
@@ -150,10 +156,33 @@ const Dashboard = () => {
     if (newMeasurementsSubResult?.data) {
       const newMetric = newMeasurementsSubResult.data.newMeasurement;
       const date = new Date(newMetric?.at);
+
       if (!batch[newMetric.metric]) {
         batch[newMetric.metric] = newMetric.value;
         batch.milliseconds = newMetric.at;
         batch.at = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+
+        const newMetricSelectedMatch = selectedMetrics.find((metric) => metric.metric === newMetric.metric);
+        const currentMetricLastMeasure = selectedMetricsWithLastMeasure.find(
+          (metric) => metric.metric === newMetric.metric,
+        );
+
+        if (newMetricSelectedMatch) {
+          if (currentMetricLastMeasure) {
+            const indexOfCurrentLastMeasure = selectedMetricsWithLastMeasure.indexOf(currentMetricLastMeasure);
+            const selectedMetricsWithLastMeasureReplacement = [...selectedMetricsWithLastMeasure];
+            selectedMetricsWithLastMeasureReplacement.splice(indexOfCurrentLastMeasure, 1, {
+              lastMeasure: newMetric.value,
+              metric: newMetric.metric,
+            });
+            setSelectedMetricsWithLastMeasure(selectedMetricsWithLastMeasureReplacement);
+          } else {
+            setSelectedMetricsWithLastMeasure([
+              ...selectedMetricsWithLastMeasure,
+              { lastMeasure: newMetric.value, metric: newMetric.metric },
+            ]);
+          }
+        }
       } else {
         const newChartData = filterNewMeasurement(chartData, batch, selectedMetrics);
         if (newChartData.length !== chartData.length) setChartData(newChartData.slice());
@@ -168,13 +197,13 @@ const Dashboard = () => {
         <Metrics />
       </Box>
       <Grid container spacing={2} className={classes.cardsConteiner}>
-        {selectedMetrics.map((metric) => {
+        {selectedMetricsWithLastMeasure.map((metric) => {
           return (
-            <Grid key={`grid_${metric}`} xs={6} sm={3} md={2} item>
+            <Grid key={`grid_${metric.metric}`} xs={6} sm={4} md={3} item>
               <Card>
-                <CardContent>
-                  <Typography variant="h6">{metric}</Typography>
-                  <Typography variant="h3">205.4</Typography>
+                <CardContent className={classes.cardContent}>
+                  <Typography variant="h6">{metric.metric}</Typography>
+                  <Typography variant="h3">{metric.lastMeasure}</Typography>
                 </CardContent>
               </Card>
             </Grid>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { MeasurementsChartItem } from './Dashboard';
+import { MeasurementsChartItem } from '../Features/Metrics/Interfaces';
 
 type MeasurementsChartProps = {
   data: MeasurementsChartItem[];
