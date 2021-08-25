@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from 'redux-starter-kit';
-import { SelectedMetric } from './Interfaces';
+import { Metric } from './Interfaces';
 
 type MetricsState = {
   metrics: string[];
-  selectedMetrics: SelectedMetric[];
+  selectedMetrics: Metric[];
 };
 
 const initialState: MetricsState = {
@@ -22,7 +22,7 @@ const slice = createSlice({
     metricsReceived: (state, action: PayloadAction<string[]>) => {
       state.metrics = action.payload;
     },
-    selectedMetrics: (state, action: PayloadAction<SelectedMetric[]>) => {
+    selectedMetrics: (state, action: PayloadAction<Metric[]>) => {
       state.selectedMetrics = action.payload;
     },
     // eslint-disable-next-line no-unused-vars

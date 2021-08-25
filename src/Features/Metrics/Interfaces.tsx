@@ -4,7 +4,9 @@ export interface MeasurementsChartItem {
   [key: string]: number | string;
 }
 
-export interface SelectedMetric {
+export interface Metric {
   metric: string;
   lastMeasure?: number;
+  unit?: string;
+  color?: string;
 }

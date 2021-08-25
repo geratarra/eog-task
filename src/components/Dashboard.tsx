@@ -1,27 +1,18 @@
 import { Box, Card, CardContent, Container, Grid, makeStyles, Typography } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
-import { SubscriptionClient } from 'subscriptions-transport-ws';
 import { useSelector } from 'react-redux';
-import { createClient, defaultExchanges, Provider, subscriptionExchange, useQuery, useSubscription } from 'urql';
+import { Provider, useQuery, useSubscription } from 'urql';
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
-import { MeasurementsChartItem, SelectedMetric } from '../Features/Metrics/Interfaces';
-import { filterNewMeasurement, setDifference } from '../utils/utils';
-
-const subscriptionClient = new SubscriptionClient('ws://react.eogresources.com/graphql', {
-  reconnect: true,
-});
-
-const client = createClient({
-  url: 'https://react.eogresources.com/graphql',
-  exchanges: [
-    ...defaultExchanges,
-    subscriptionExchange({
-      forwardSubscription: (operation) => subscriptionClient.request(operation),
-    }),
-  ],
-});
+import { MeasurementsChartItem, Metric } from '../Features/Metrics/Interfaces';
+import {
+  createChartDataItems,
+  createMetricUnitsArray,
+  filterNewMeasurement,
+  graphqlClient,
+  setDifference,
+} from '../utils/utils';
 
 const newMeasurementSub = `
   subscription NewMeasurementSub {
@@ -65,8 +56,6 @@ const useGetMultipleMeasurements = (input: { metricName: String }[]) => {
   return getMultipleMeasurementsQueryResult;
 };
 
-const getColor = (index: number) => ['green', 'blue', 'red', 'black', 'pink', 'purple', 'orange'][index];
-
 const useStyles = makeStyles({
   cardsConteiner: {
     paddingBottom: '1%',
@@ -76,42 +65,6 @@ const useStyles = makeStyles({
     paddingRight: '10%',
   },
 });
-
-const createChartDataItems = (multipleMeasurementsResult: any[], limit: number) => {
-  const chartDataItems: MeasurementsChartItem[] = [];
-
-  if (multipleMeasurementsResult?.length !== 0) {
-    let date;
-
-    for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
-      for (let k = 0; k < limit; k += 1) {
-        chartDataItems[k] = chartDataItems[k] || {};
-        chartDataItems[k][multipleMeasurementsResult[i].metric] = multipleMeasurementsResult[i]?.measurements[k]?.value;
-        date = new Date(multipleMeasurementsResult[i]?.measurements[k]?.at);
-        chartDataItems[k].at = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
-        chartDataItems[k].milliseconds = multipleMeasurementsResult[i]?.measurements[k]?.at;
-      }
-    }
-  }
-
-  return chartDataItems;
-};
-
-const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
-  const auxMetricUnits: any[] = [];
-
-  if (multipleMeasurementsResult?.length !== 0) {
-    for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
-      auxMetricUnits.push({
-        metric: multipleMeasurementsResult[i].metric,
-        unit: multipleMeasurementsResult[i].measurements[0].unit,
-        color: getColor(i),
-      });
-    }
-  }
-
-  return auxMetricUnits;
-};
 
 let batch: MeasurementsChartItem = {
   id: new Date().getTime(),
@@ -127,12 +80,11 @@ const Dashboard = () => {
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric.metric };
   });
-  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<SelectedMetric[]>([
-    ...selectedMetrics,
-  ]);
+  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<Metric[]>([...selectedMetrics]);
   let { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
 
   useEffect(() => {
+    // We need to listen changes in selected metrics to update Cards components with last measures.
     if (selectedMetrics.length < selectedMetricsWithLastMeasure.length) {
       const selectedMetricsStrings = selectedMetrics.map((metric) => metric.metric);
       const selectedMetricsWithLastMeasureStrings = selectedMetricsWithLastMeasure.map((metric) => metric.metric);
@@ -149,7 +101,7 @@ const Dashboard = () => {
   useEffect(() => {
     multipleMeasurementsResult = multipleMeasurementsResult?.getMultipleMeasurements;
     setMetricUnits(createMetricUnitsArray(multipleMeasurementsResult));
-    setChartData(createChartDataItems(multipleMeasurementsResult, 200));
+    setChartData(createChartDataItems(multipleMeasurementsResult, 400));
   }, [multipleMeasurementsResult]);
 
   useEffect(() => {
@@ -174,12 +126,13 @@ const Dashboard = () => {
             selectedMetricsWithLastMeasureReplacement.splice(indexOfCurrentLastMeasure, 1, {
               lastMeasure: newMetric.value,
               metric: newMetric.metric,
+              unit: newMetric.unit,
             });
             setSelectedMetricsWithLastMeasure(selectedMetricsWithLastMeasureReplacement);
           } else {
             setSelectedMetricsWithLastMeasure([
               ...selectedMetricsWithLastMeasure,
-              { lastMeasure: newMetric.value, metric: newMetric.metric },
+              { lastMeasure: newMetric.value, metric: newMetric.metric, unit: newMetric.unit },
             ]);
           }
         }
@@ -202,7 +155,7 @@ const Dashboard = () => {
             <Grid key={`grid_${metric.metric}`} xs={6} sm={4} md={3} item>
               <Card>
                 <CardContent className={classes.cardContent}>
-                  <Typography variant="h6">{metric.metric}</Typography>
+                  <Typography variant="h6">{`${metric.metric} (${metric.unit})`}</Typography>
                   <Typography variant="h3">{metric.lastMeasure}</Typography>
                 </CardContent>
               </Card>
@@ -219,7 +172,7 @@ const Dashboard = () => {
 
 export default () => {
   return (
-    <Provider value={client}>
+    <Provider value={graphqlClient}>
       <Dashboard />
     </Provider>
   );
