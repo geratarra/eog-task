@@ -3,7 +3,7 @@ import { SubscriptionClient } from 'subscriptions-transport-ws';
 import { createClient, defaultExchanges, subscriptionExchange } from 'urql';
 
 // App stuff
-import { MeasurementsChartItem, Metric } from '../Features/Metrics/Interfaces';
+import { MeasurementResponse, MeasurementsChartItem, Metric, MetricLine } from '../Features/Metrics/Interfaces';
 import { API_URL, WS_URL } from './constants';
 
 const subscriptionClient = new SubscriptionClient(WS_URL, {
@@ -23,7 +23,7 @@ const graphqlClient = createClient({
 /**
  * @returns Difference/Complement between setA and setB.
  */
-const setDifference = (setA: Set<String>, setB: Set<String>) => {
+const setDifference = (setA: Set<string>, setB: Set<string>) => {
   const difference = new Set(setA);
   setB.forEach((elem) => {
     difference.delete(elem);
@@ -38,7 +38,11 @@ const setDifference = (setA: Set<String>, setB: Set<String>) => {
  * @param {Metric[]} filters Currently selected metrics.
  * @returns Measures array included latest measure from Subscription.
  */
-const filterNewMeasurement = (data: any, newMeasurement: MeasurementsChartItem, filters: Metric[]) => {
+const filterNewMeasurement = (
+  data: MeasurementsChartItem[],
+  newMeasurement: MeasurementsChartItem,
+  filters: Metric[],
+) => {
   const measureToAdd: MeasurementsChartItem = {
     id: newMeasurement.id,
     at: newMeasurement.at,
@@ -56,7 +60,7 @@ const filterNewMeasurement = (data: any, newMeasurement: MeasurementsChartItem, 
  * @param {number} limit Number to limit the data array to populate the chart.
  * @returns Data array in proper format to populate Recharts chart.
  */
-const createChartDataItems = (multipleMeasurementsResult: any[], limit: number) => {
+const createChartDataItems = (multipleMeasurementsResult: MeasurementResponse[], limit: number) => {
   const chartDataItems: MeasurementsChartItem[] = [];
 
   if (multipleMeasurementsResult?.length !== 0) {
@@ -81,7 +85,7 @@ const createChartDataItems = (multipleMeasurementsResult: any[], limit: number) 
  * @returns Array of elements which contain metric name, unit and color used in the chart.
  */
 const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
-  const auxMetricUnits: Metric[] = [];
+  const auxMetricUnits: MetricLine[] = [];
 
   if (multipleMeasurementsResult?.length !== 0) {
     for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
@@ -89,6 +93,8 @@ const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
         metric: multipleMeasurementsResult[i].metric,
         unit: multipleMeasurementsResult[i].measurements[0].unit,
         color: getColor(i),
+        min: 0,
+        render: true,
       });
     }
   }

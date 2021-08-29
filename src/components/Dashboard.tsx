@@ -5,7 +5,7 @@ import { Provider, useQuery, useSubscription } from 'urql';
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
-import { MeasurementsChartItem, Metric } from '../Features/Metrics/Interfaces';
+import { MeasureCard, MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
 import {
   createChartDataItems,
   createMetricUnitsArray,
@@ -46,7 +46,7 @@ const getMultipleMeasurementsQuery = `
   }
 `;
 
-const useGetMultipleMeasurements = (input: { metricName: String }[]) => {
+const useGetMultipleMeasurements = (input: { metricName: string }[]) => {
   const [getMultipleMeasurementsQueryResult] = useQuery({
     query: getMultipleMeasurementsQuery,
     variables: {
@@ -69,18 +69,27 @@ const useStyles = makeStyles({
 let batch: MeasurementsChartItem = {
   id: new Date().getTime(),
   at: '',
+  milliseconds: 0,
 };
 
 const Dashboard = () => {
   const classes = useStyles();
   const [newMeasurementsSubResult] = useSubscription({ query: newMeasurementSub });
   const [chartData, setChartData] = useState<MeasurementsChartItem[]>([]);
-  const [metricUnits, setMetricUnits] = useState<any[]>([]);
+  const [metricUnits, setMetricUnits] = useState<MetricLine[]>([]);
   const { selectedMetrics } = useSelector(getSelectedMetrics);
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric.metric };
   });
-  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<Metric[]>([...selectedMetrics]);
+  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<MeasureCard[]>(
+    selectedMetrics.map((metric) => {
+      return {
+        metric: metric.metric,
+        lastMeasure: null,
+        unit: null,
+      };
+    }),
+  );
   let { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
 
   useEffect(() => {
@@ -114,12 +123,12 @@ const Dashboard = () => {
         batch.milliseconds = newMetric.at;
         batch.at = `${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-        const newMetricSelectedMatch = selectedMetrics.find((metric) => metric.metric === newMetric.metric);
+        const newMetricInCurrentSelection = selectedMetrics.find((metric) => metric.metric === newMetric.metric);
         const currentMetricLastMeasure = selectedMetricsWithLastMeasure.find(
           (metric) => metric.metric === newMetric.metric,
         );
 
-        if (newMetricSelectedMatch) {
+        if (newMetricInCurrentSelection) {
           if (currentMetricLastMeasure) {
             const indexOfCurrentLastMeasure = selectedMetricsWithLastMeasure.indexOf(currentMetricLastMeasure);
             const selectedMetricsWithLastMeasureReplacement = [...selectedMetricsWithLastMeasure];
@@ -139,7 +148,7 @@ const Dashboard = () => {
       } else {
         const newChartData = filterNewMeasurement(chartData, batch, selectedMetrics);
         if (newChartData.length !== chartData.length) setChartData(newChartData.slice());
-        batch = { id: new Date().getTime(), at: '' };
+        batch = { id: new Date().getTime(), at: '', milliseconds: 0 };
       }
     }
   }, [newMeasurementsSubResult]);

@@ -1,11 +1,11 @@
 import React from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { MeasurementsChartItem } from '../Features/Metrics/Interfaces';
+import { MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
 
 type MeasurementsChartProps = {
   data: MeasurementsChartItem[];
-  metricUnits: any[];
+  metricUnits: MetricLine[];
 };
 
 interface CustomTooltipInterface {
@@ -44,14 +44,16 @@ CustomTooltip.defaultProps = {
 export default ({ data, metricUnits }: MeasurementsChartProps) => {
   metricUnits.forEach((unit) => {
     unit.render = false;
-    const metricByUnit = data?.map((metric) => {
+    // Getting all measures by unit (ie [123, 122, 111] for oilTemp)
+    const measuresByUnit = data?.map((metric) => {
       return metric[unit.metric];
     });
-    unit.min = metricByUnit.reduce((acc, curr) => (acc < curr ? acc : curr));
+    // Setting the minimum measure of every metric
+    unit.min = measuresByUnit.reduce((acc, curr) => (acc < curr ? acc : curr)) as number;
   });
 
   metricUnits.forEach((unit) => {
-    const metricsByUnit = metricUnits.filter((metric: { [x: string]: any }) => {
+    const metricsByUnit = metricUnits.filter((metric) => {
       return metric.unit === unit.unit;
     });
 
