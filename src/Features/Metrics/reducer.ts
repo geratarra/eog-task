@@ -26,7 +26,9 @@ const slice = createSlice({
       state.selectedMetrics = action.payload;
     },
     // eslint-disable-next-line no-unused-vars
-    metricsApiErrorReceived: (state, action: PayloadAction<ApiErrorAction>) => state,
+    metricsApiErrorReceived: (state, action: PayloadAction<ApiErrorAction>) => {
+      alert(action.payload.error);
+    },
   },
 });
 

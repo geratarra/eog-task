@@ -1,11 +1,11 @@
-import { Box, Card, CardContent, Container, Grid, makeStyles, Typography } from '@material-ui/core';
+import { Box, CircularProgress, Container, Grid, makeStyles } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Provider, useQuery, useSubscription } from 'urql';
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
-import { MeasureCard, MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
+import { LastMeasure, MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
 import {
   createChartDataItems,
   createMetricUnitsArray,
@@ -13,6 +13,8 @@ import {
   graphqlClient,
   setDifference,
 } from '../utils/utils';
+import MeasureCard from './MeasureCard';
+import AlertParagraph from './AlertParagraph';
 
 const newMeasurementSub = `
   subscription NewMeasurementSub {
@@ -60,10 +62,6 @@ const useStyles = makeStyles({
   cardsConteiner: {
     paddingBottom: '1%',
   },
-  cardContent: {
-    padding: '5%',
-    paddingRight: '10%',
-  },
 });
 
 let batch: MeasurementsChartItem = {
@@ -81,7 +79,7 @@ const Dashboard = () => {
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric.metric };
   });
-  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<MeasureCard[]>(
+  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<LastMeasure[]>(
     selectedMetrics.map((metric) => {
       return {
         metric: metric.metric,
@@ -90,7 +88,13 @@ const Dashboard = () => {
       };
     }),
   );
-  let { data: multipleMeasurementsResult } = useGetMultipleMeasurements(multipleMeasurementsInput);
+  const {
+    data: measurementsResponse,
+    fetching: fetchingMeasurements,
+    error: measurementsError,
+  } = useGetMultipleMeasurements(multipleMeasurementsInput);
+  let multipleMeasurementsResult = measurementsResponse;
+  const { data: subscriptionResponse, error: subscriptionError } = newMeasurementsSubResult;
 
   useEffect(() => {
     // We need to listen changes in selected metrics to update Cards components with last measures.
@@ -114,8 +118,8 @@ const Dashboard = () => {
   }, [multipleMeasurementsResult]);
 
   useEffect(() => {
-    if (newMeasurementsSubResult?.data) {
-      const newMetric = newMeasurementsSubResult.data.newMeasurement;
+    if (subscriptionResponse) {
+      const newMetric = subscriptionResponse.newMeasurement;
       const date = new Date(newMetric?.at);
 
       if (!batch[newMetric.metric]) {
@@ -151,29 +155,44 @@ const Dashboard = () => {
         batch = { id: new Date().getTime(), at: '', milliseconds: 0 };
       }
     }
-  }, [newMeasurementsSubResult]);
+  }, [subscriptionResponse]);
+
+  const chart = measurementsError ? (
+    <AlertParagraph
+      bodyVariant="body1"
+      body={measurementsError.message}
+      color="error"
+      headerVariant="h6"
+      header="Error while getting multiple measurements:"
+    />
+  ) : (
+    <MeasurementsChart metricUnits={metricUnits} data={chartData} />
+  );
+
+  const showLoading = fetchingMeasurements ? <CircularProgress /> : chart;
+
+  const subscriptionLayout = subscriptionError ? (
+    <AlertParagraph
+      bodyVariant="body1"
+      body={subscriptionError.message}
+      color="error"
+      headerVariant="h6"
+      header="Error while getting real time last measures:"
+    />
+  ) : (
+    <Grid container spacing={2} className={classes.cardsConteiner}>
+      {selectedMetricsWithLastMeasure.map((measure) => {
+        return <MeasureCard measure={measure} key={measure.metric} />;
+      })}
+    </Grid>
+  );
 
   return (
     <Container maxWidth="lg">
-      <Box>
-        <Metrics />
-      </Box>
-      <Grid container spacing={2} className={classes.cardsConteiner}>
-        {selectedMetricsWithLastMeasure.map((metric) => {
-          return (
-            <Grid key={`grid_${metric.metric}`} xs={6} sm={4} md={3} item>
-              <Card>
-                <CardContent className={classes.cardContent}>
-                  <Typography variant="h6">{`${metric.metric} (${metric.unit})`}</Typography>
-                  <Typography variant="h3">{metric.lastMeasure}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
-      <Box pb={10}>
-        {selectedMetrics.length !== 0 && <MeasurementsChart metricUnits={metricUnits} data={chartData} />}
+      <Metrics />
+      {subscriptionLayout}
+      <Box pt={10} pb={10} alignItems="center" justifyContent="center" display="flex">
+        {selectedMetrics.length !== 0 && showLoading}
       </Box>
     </Container>
   );

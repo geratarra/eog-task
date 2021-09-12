@@ -17,7 +17,7 @@ export interface MetricLine extends Metric {
   color: string;
 }
 
-export interface MeasureCard extends Metric {
+export interface LastMeasure extends Metric {
   lastMeasure: number | null;
   unit: string | null;
 }

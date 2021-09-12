@@ -10,6 +10,9 @@ const useStyles = makeStyles({
   selectContainer: {
     marginBottom: 10,
   },
+  circularProgressWrapper: {
+    textAlign: 'center',
+  },
 });
 
 const client = createClient({
@@ -53,14 +56,21 @@ const Metrics = () => {
 
   useEffect(() => {
     if (error) {
-      dispatch(actions.metricsApiErrorReceived({ error: error.message }));
+      dispatch(actions.metricsApiErrorReceived({ error: `${error.message}\nUsing default metrics for selection` }));
       return;
     }
     if (!data) return;
     dispatch(actions.metricsReceived(data.getMetrics));
   }, [dispatch, data, error]);
 
-  if (fetching) return <CircularProgress />;
+  if (fetching) {
+    return (
+      <Box className={classes.circularProgressWrapper}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box className={classes.selectContainer}>
       <MultipleSelect values={metrics} changeCallback={selectedValuesHandler} />
