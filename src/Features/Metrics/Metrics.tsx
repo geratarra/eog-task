@@ -5,10 +5,12 @@ import { Box, CircularProgress, makeStyles } from '@material-ui/core';
 import { actions } from './reducer';
 import { IState } from '../../store';
 import MultipleSelect from '../../components/MultipleSelect';
+import { getColor } from '../../utils/utils';
 
 const useStyles = makeStyles({
   selectContainer: {
-    marginBottom: 10,
+    marginBottom: 20,
+    marginTop: 20,
   },
   circularProgressWrapper: {
     textAlign: 'center',
@@ -43,6 +45,7 @@ const Metrics = () => {
         values.map((value) => {
           return {
             metric: value,
+            color: getColor(value),
           };
         }),
       ),

@@ -7,6 +7,7 @@ export type MeasurementsChartItem = {
 };
 
 export interface Metric {
+  color: string;
   metric: string;
 }
 
@@ -14,7 +15,6 @@ export interface MetricLine extends Metric {
   render: boolean;
   min: number;
   unit: string;
-  color: string;
 }
 
 export interface LastMeasure extends Metric {

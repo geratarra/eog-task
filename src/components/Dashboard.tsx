@@ -5,16 +5,11 @@ import { Provider, useQuery, useSubscription } from 'urql';
 import Metrics from '../Features/Metrics/Metrics';
 import { IState } from '../store';
 import MeasurementsChart from './MeasurementsChart';
-import { LastMeasure, MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
-import {
-  createChartDataItems,
-  createMetricUnitsArray,
-  filterNewMeasurement,
-  graphqlClient,
-  setDifference,
-} from '../utils/utils';
+import { MeasurementsChartItem, MetricLine } from '../Features/Metrics/Interfaces';
+import { createChartDataItems, createMetricUnitsArray, filterNewMeasurement, graphqlClient } from '../utils/utils';
 import MeasureCard from './MeasureCard';
 import AlertParagraph from './AlertParagraph';
+import useSelectedMetricsWithLastMeasure from '../utils/CustomHooks';
 
 const newMeasurementSub = `
   subscription NewMeasurementSub {
@@ -79,14 +74,8 @@ const Dashboard = () => {
   const multipleMeasurementsInput = selectedMetrics.map((metric) => {
     return { metricName: metric.metric };
   });
-  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useState<LastMeasure[]>(
-    selectedMetrics.map((metric) => {
-      return {
-        metric: metric.metric,
-        lastMeasure: null,
-        unit: null,
-      };
-    }),
+  const [selectedMetricsWithLastMeasure, setSelectedMetricsWithLastMeasure] = useSelectedMetricsWithLastMeasure(
+    selectedMetrics,
   );
   const {
     data: measurementsResponse,
@@ -97,23 +86,9 @@ const Dashboard = () => {
   const { data: subscriptionResponse, error: subscriptionError } = newMeasurementsSubResult;
 
   useEffect(() => {
-    // We need to listen changes in selected metrics to update Cards components with last measures.
-    if (selectedMetrics.length < selectedMetricsWithLastMeasure.length) {
-      const selectedMetricsStrings = selectedMetrics.map((metric) => metric.metric);
-      const selectedMetricsWithLastMeasureStrings = selectedMetricsWithLastMeasure.map((metric) => metric.metric);
-      const selectedMetricsSet = new Set(selectedMetricsStrings);
-      const selectedMetricsWithLastMeasureSet = new Set(selectedMetricsWithLastMeasureStrings);
-      const removedElementAsSet = setDifference(selectedMetricsWithLastMeasureSet, selectedMetricsSet);
-      const removedMetric = [...removedElementAsSet][0];
-      setSelectedMetricsWithLastMeasure(
-        selectedMetricsWithLastMeasure.filter((metric) => metric.metric !== removedMetric),
-      );
-    }
-  }, [selectedMetrics]);
-
-  useEffect(() => {
     multipleMeasurementsResult = multipleMeasurementsResult?.getMultipleMeasurements;
     setMetricUnits(createMetricUnitsArray(multipleMeasurementsResult));
+
     setChartData(createChartDataItems(multipleMeasurementsResult, 400));
   }, [multipleMeasurementsResult]);
 
@@ -140,12 +115,18 @@ const Dashboard = () => {
               lastMeasure: newMetric.value,
               metric: newMetric.metric,
               unit: newMetric.unit,
+              color: currentMetricLastMeasure.color,
             });
             setSelectedMetricsWithLastMeasure(selectedMetricsWithLastMeasureReplacement);
           } else {
             setSelectedMetricsWithLastMeasure([
               ...selectedMetricsWithLastMeasure,
-              { lastMeasure: newMetric.value, metric: newMetric.metric, unit: newMetric.unit },
+              {
+                lastMeasure: newMetric.value,
+                metric: newMetric.metric,
+                unit: newMetric.unit,
+                color: newMetricInCurrentSelection.color,
+              },
             ]);
           }
         }
@@ -191,7 +172,7 @@ const Dashboard = () => {
     <Container maxWidth="lg">
       <Metrics />
       {subscriptionLayout}
-      <Box pt={10} pb={10} alignItems="center" justifyContent="center" display="flex">
+      <Box pt={2} pb={3} alignItems="center" justifyContent="center" display="flex">
         {selectedMetrics.length !== 0 && showLoading}
       </Box>
     </Container>

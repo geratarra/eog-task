@@ -24,7 +24,9 @@ const MeasureCard = ({ measure }: MeasureCardProps) => {
       <Card>
         <CardContent className={classes.cardContent}>
           <Typography variant="h6">{`${measure.metric} (${measure.unit})`}</Typography>
-          <Typography variant="h3">{measure.lastMeasure}</Typography>
+          <Typography style={{ color: `${measure.color}` }} variant="h3">
+            {measure.lastMeasure}
+          </Typography>
         </CardContent>
       </Card>
     </Grid>

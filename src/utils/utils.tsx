@@ -4,7 +4,7 @@ import { createClient, defaultExchanges, subscriptionExchange } from 'urql';
 
 // App stuff
 import { MeasurementResponse, MeasurementsChartItem, Metric, MetricLine } from '../Features/Metrics/Interfaces';
-import { API_URL, WS_URL } from './constants';
+import { API_URL, Color, WS_URL } from './constants';
 
 const subscriptionClient = new SubscriptionClient(WS_URL, {
   reconnect: true,
@@ -84,15 +84,17 @@ const createChartDataItems = (multipleMeasurementsResult: MeasurementResponse[],
  * @param multipleMeasurementsResult Array measures returned from the API.
  * @returns Array of elements which contain metric name, unit and color used in the chart.
  */
-const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
+const createMetricUnitsArray = (multipleMeasurementsResult: MeasurementResponse[]) => {
   const auxMetricUnits: MetricLine[] = [];
 
   if (multipleMeasurementsResult?.length !== 0) {
     for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
+      // eslint-disable-next-line no-debugger
+      //   debugger;
       auxMetricUnits.push({
         metric: multipleMeasurementsResult[i].metric,
         unit: multipleMeasurementsResult[i].measurements[0].unit,
-        color: getColor(i),
+        color: getColor(multipleMeasurementsResult[i].metric),
         min: 0,
         render: true,
       });
@@ -103,11 +105,11 @@ const createMetricUnitsArray = (multipleMeasurementsResult: any[]) => {
 };
 
 /**
- * @param index Index of item corresponding to a color in the array.
+ * @param metric Color's metric.
  * @returns A color in string format.
  */
-const getColor = (index: number) =>
-  ['green', 'blue', 'red', 'black', 'pink', 'purple', 'orange'][index] ||
-  `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+const getColor = (metric: string) => {
+  return Color[metric as keyof typeof Color] || `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+};
 
 export { filterNewMeasurement, setDifference, graphqlClient, getColor, createMetricUnitsArray, createChartDataItems };

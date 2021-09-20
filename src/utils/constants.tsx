@@ -1,4 +1,15 @@
+/* eslint-disable no-unused-vars */
 const WS_URL = 'ws://react.eogresources.com/graphql';
 const API_URL = 'https://react.eogresources.com/graphql';
 
-export { API_URL, WS_URL };
+// eslint-disable-next-line no-shadow
+export enum Color {
+  flareTemp = 'green',
+  injValveOpen = 'blue',
+  oilTemp = 'red',
+  casingPressure = 'black',
+  tubingPressure = 'pink',
+  waterTemp = 'purple',
+}
+
+export { WS_URL, API_URL };
