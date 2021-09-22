@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipInterface) => {
     payload.forEach((point) => {
       const metricLabel = `${point.name}: ${point.value}`;
       metricPelements.push(
-        <p style={{ margin: '0px 0px' }} key={point.name}>
+        <p style={{ margin: '0px 0px', color: point.color }} key={point.name}>
           {metricLabel}
         </p>,
       );

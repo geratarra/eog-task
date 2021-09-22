@@ -89,7 +89,7 @@ const Dashboard = () => {
     multipleMeasurementsResult = multipleMeasurementsResult?.getMultipleMeasurements;
     setMetricUnits(createMetricUnitsArray(multipleMeasurementsResult));
 
-    setChartData(createChartDataItems(multipleMeasurementsResult, 400));
+    setChartData(createChartDataItems(multipleMeasurementsResult, 1000));
   }, [multipleMeasurementsResult]);
 
   useEffect(() => {
