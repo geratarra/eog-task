@@ -2,6 +2,7 @@
   "name": "eog-react-visualization-base",
   "version": "2.0.0",
   "private": true,
+  "homepage": "https://geratarra.github.io/eog-task",
   "dependencies": {
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.5.1",
@@ -29,7 +30,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -53,6 +56,7 @@
     "eslint-plugin-prettier": "^3.1.1",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-hooks": "^2.2.0",
+    "gh-pages": "^3.2.3",
     "prettier": "^2.2.1",
     "redux-devtools-extension": "^2.13.5"
   }
