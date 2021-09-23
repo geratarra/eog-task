@@ -57,6 +57,9 @@ const useStyles = makeStyles({
   cardsConteiner: {
     paddingBottom: '1%',
   },
+  dashboardContainer: {
+    height: '100%',
+  },
 });
 
 let batch: MeasurementsChartItem = {
@@ -169,7 +172,7 @@ const Dashboard = () => {
   );
 
   return (
-    <Container maxWidth="lg">
+    <Container className={classes.dashboardContainer} maxWidth="lg">
       <Metrics />
       {subscriptionLayout}
       <Box pt={2} pb={3} alignItems="center" justifyContent="center" display="flex">

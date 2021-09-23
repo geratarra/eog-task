@@ -14,6 +14,10 @@ const useStyles = makeStyles({
   },
   circularProgressWrapper: {
     textAlign: 'center',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
