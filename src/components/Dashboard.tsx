@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Container, Grid, makeStyles } from '@material-ui/core';
+import { Box, CircularProgress, Container, Grid, makeStyles, Typography } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Provider, useQuery, useSubscription } from 'urql';
@@ -173,6 +173,10 @@ const Dashboard = () => {
 
   return (
     <Container className={classes.dashboardContainer} maxWidth="lg">
+      <Box sx={{ padding: '2% 0%', textAlign: 'center' }}>
+        <Typography variant="h4">EOG Task</Typography>
+        <Typography variant="h5">Select some metrics to get started:</Typography>
+      </Box>
       <Metrics />
       {subscriptionLayout}
       <Box pt={2} pb={3} alignItems="center" justifyContent="center" display="flex">
