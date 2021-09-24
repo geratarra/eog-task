@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/eog-task/static/js/main.a2d08ec2.chunk.js",
-    "main.js.map": "/eog-task/static/js/main.a2d08ec2.chunk.js.map",
+    "main.js": "/eog-task/static/js/main.b4be9727.chunk.js",
+    "main.js.map": "/eog-task/static/js/main.b4be9727.chunk.js.map",
     "runtime-main.js": "/eog-task/static/js/runtime-main.46d41a29.js",
     "runtime-main.js.map": "/eog-task/static/js/runtime-main.46d41a29.js.map",
     "static/css/2.8718328a.chunk.css": "/eog-task/static/css/2.8718328a.chunk.css",
@@ -15,6 +15,6 @@
     "static/js/runtime-main.46d41a29.js",
     "static/css/2.8718328a.chunk.css",
     "static/js/2.4c9f95c4.chunk.js",
-    "static/js/main.a2d08ec2.chunk.js"
+    "static/js/main.b4be9727.chunk.js"
   ]
 }
