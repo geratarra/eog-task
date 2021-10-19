@@ -174,8 +174,8 @@ const Dashboard = () => {
   return (
     <Container className={classes.dashboardContainer} maxWidth="lg">
       <Box sx={{ padding: '2% 0%', textAlign: 'center' }}>
-        <Typography variant="h4">EOG Task</Typography>
-        <Typography variant="h5">Select some metrics to get started:</Typography>
+        <Typography variant="h6">EOG Task</Typography>
+        <Typography variant="subtitle1">Select some metrics to get started:</Typography>
       </Box>
       <Metrics />
       {subscriptionLayout}

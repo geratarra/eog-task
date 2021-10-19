@@ -17,7 +17,7 @@ const initialState = {
   locationName: '',
 };
 
-const toF = (c: number) => (c * 9) / 5 + 32;
+const toF = (c: number) => Number(((c * 9) / 5 + 32).toFixed(2));
 
 const slice = createSlice({
   name: 'weather',

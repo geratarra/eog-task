@@ -58,8 +58,7 @@ const filterNewMeasurement = (
 /**
  * @param multipleMeasurementsResult Array measures returned from the API.
  * @param {number} limit This paramater is used to limit the number of points to render in the chart. Rendering all points
- * coming frmo the API makes the chart looks non-aesthetic since they are too many. Keep in mind, if this parameter is greater that
- * the number of measures, you'll get an assertion error. TODO: improve the previous issue to avoid unhandled exceptions.
+ * coming frmo the API makes the chart looks non-aesthetic since they are too many.
  * @returns Data array in proper format to populate Recharts chart.
  */
 // eslint-disable-next-line no-unused-vars
@@ -72,7 +71,10 @@ const createChartDataItems = (multipleMeasurementsResult: MeasurementResponse[],
 
     for (let i = 0; i < multipleMeasurementsResult?.length; i += 1) {
       for (
-        let k = multipleMeasurementsResult[i].measurements.length - limit;
+        let k =
+          multipleMeasurementsResult[i].measurements.length - limit > 0
+            ? multipleMeasurementsResult[i].measurements.length - limit
+            : multipleMeasurementsResult[i].measurements.length - limit;
         k < multipleMeasurementsResult[i].measurements.length;
         k += 1
       ) {

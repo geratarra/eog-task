@@ -71,7 +71,7 @@ export default ({ data, metricUnits }: MeasurementsChartProps) => {
   });
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <ResponsiveContainer height={400}>
       <LineChart
         margin={{
           top: 5,
